@@ -1,11 +1,13 @@
-from utils.calculation_functions import calc_circle
+from utils.import_functions import import_car_brand_rdw
 
 
 if __name__ == '__main__':
+    # specify the brand
+    selected_brand = input("Insert a brand:\n")
 
-    my_diameter = float(input("Insert the diameter:\n"))
+    # get the list of cars
+    cars_list = import_car_brand_rdw(selected_brand)
 
-    my_size = calc_circle(my_diameter, rounding=5)
-
-
-    print(my_size)
+    # convert the cars_list to a pandas DataFrame, and apply modifications
+    
+    pass
