@@ -16,3 +16,8 @@ Steps:
 * Run the application
     * From the Debugger
     * or: `python main.py`
+
+
+## Testing
+
+`pytest -v --junitxml=report.xml`
