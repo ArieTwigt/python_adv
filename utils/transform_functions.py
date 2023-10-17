@@ -1,7 +1,7 @@
 from typing import List
 import pandas as pd
 from utils import COLUMNS_LIST, DF_DTYPES, DF_COLNAMES
-from datetime import date
+import datetime
 
 
 def convert_cars_list_to_df(cars_list: List) -> pd.DataFrame:
@@ -60,12 +60,14 @@ def convert_cars_df_data_types(cars_df: pd.DataFrame, **kwargs):
         if key in df_colnames:
             df_types_filtered[key] = value
 
-    # iterate over the keyword args
     for key, value in df_types_filtered.items():
-        if value == date:
-            cars_df[key] = pd.to_datetime(cars_df[key], format="%Y%m%d")
-        else:
-            cars_df[key] = cars_df[key].astype(value)
+        match value:
+            case datetime.date:
+                cars_df[key] = pd.to_datetime(cars_df[key], format="%Y%m%d")
+            case float():
+                cars_df[key] = pd.to_numeric(cars_df[key])
+            case _:
+                cars_df[key] = cars_df[key].astype(value)
 
 
     return cars_df
