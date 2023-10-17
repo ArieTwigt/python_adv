@@ -14,7 +14,9 @@ def import_car_brand_rdw(selected_brand: str) -> List[Dict]:
     selected_brand_upper = selected_brand.upper()
 
     # define the endpoint
-    endpoint = f"https://opendata.rdw.nl/resource/m9d7-ebf2.json?merk={selected_brand_upper}"
+    #endpoint = f"https://opendata.rdw.nl/resource/m9d7-ebf2.json?merk={selected_brand_upper}"
+
+    endpoint = f"https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken={selected_brand_upper}"
 
     # execute the request
     response = requests.get(endpoint)

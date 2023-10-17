@@ -45,15 +45,23 @@ def convert_cars_df_data_types(cars_df: pd.DataFrame, **kwargs):
     Specify the data types for the cars dataset
     '''
 
+    # filter for the available column names
+    df_colnames = list(cars_df.columns)
+
     # check if the keyword args are specified
     if len(kwargs.keys()) == 0:
         df_types = DF_DTYPES
     else:
         df_types = kwargs
 
+    # filter only for the df_types that appear in the DataFrame
+    df_types_filtered = {}
+    for key, value in df_types.items():
+        if key in df_colnames:
+            df_types_filtered[key] = value
 
     # iterate over the keyword args
-    for key, value in df_types.items():
+    for key, value in df_types_filtered.items():
         if value == date:
             cars_df[key] = pd.to_datetime(cars_df[key], format="%Y%m%d")
         else:
@@ -84,9 +92,10 @@ def change_cars_df_na_values(cars_df: pd.DataFrame) -> pd.DataFrame:
 
 
     # remove the na values
-    cars_df.dropna(subset=['catalogusprijs', 'datum_tenaamstelling'], 
-                thresh= 2,
-                inplace=True)
+    if 'catalogusprijs' in cars_df.columns and  'datum_tenaamstelling' in cars_df.columns:
+        cars_df.dropna(subset=['catalogusprijs', 'datum_tenaamstelling'], 
+                    thresh= 2,
+                    inplace=True)
 
     # get the row count after the filter
     new_row_count = len(cars_df)
