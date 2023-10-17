@@ -2,14 +2,55 @@ import requests
 import pandas as pd
 from utils import COLUMNS_LIST, DF_DTYPES, DF_COLNAMES
 import datetime
-import re
+import os
+import json
 
-class CarDataCollection:
+class Car:
+    
+
+    def __init__(self, license_plate:str, 
+                        brand:str,
+                        model: str, 
+                        first_date: datetime.date,
+                        color: str, 
+                        price:float):
+
+        self.license_plate = license_plate
+        self.brand = brand
+        self.model = model
+        self.first_date = first_date
+        self.color = color
+        self.price = price
 
 
-    def add_to_collection(self, CarData):
-        self.car_list
-        pass
+    def __repr__(self) -> str:
+        return f"{self.license_plate}-{self.brand}-{self.model}"
+
+
+class Model:
+    
+
+    def __init__(self, name:str) -> None:
+        self.name = name
+
+    def __repr__(self) -> str:
+        return f"{self.name}"
+
+class Brand:
+
+    models = []
+
+    def __init__(self, name) -> None:
+        self.name = name
+
+    def add_model(self, model: Model) -> None:
+        current_model_names = [model.name for model in self.models]
+        if model.name not in current_model_names:
+            self.models.append(model)
+
+
+    def __repr__(self) -> str:
+        return f"{self.name}"
 
 class CarData:
 
@@ -18,6 +59,7 @@ class CarData:
     steps = []
     status = "New"
     data = pd.DataFrame()
+    cars_list = []
 
     # define the initalization
     def __init__(self, brand: str,
@@ -31,6 +73,9 @@ class CarData:
         self.brand = brand
         self.color = color
         self.steps.append("Initialized")
+        
+        # add the new brand
+        self.brand_object = Brand(name=brand)
 
 
     def change_brand(self, new_brand: str) -> None:
@@ -40,7 +85,7 @@ class CarData:
 
 
     # method for importing data from the RDW API
-    def import_car_brand_rdw(self) -> None:
+    def import_car_brand_rdw(self, exceed_limit=False, import_limit: int=1000) -> None:
         '''
         Extract car data from the RDW (Basisregistratie voertuigen)
 
@@ -52,6 +97,11 @@ class CarData:
 
         # define the endpoint
         endpoint = f"{self.rdw_endpoint}?merk={selected_brand_upper}"
+
+        # in case of exceeding the limit
+        if exceed_limit:
+            limit_endpoint_str = f"&$limit={import_limit}"
+            endpoint += limit_endpoint_str
 
         # execute the request
         response = requests.get(endpoint)
@@ -66,10 +116,10 @@ class CarData:
 
         # check if the list is not empty
         if len(cars_list) == 0:
-            print(f"No cars found for {selected_brand}")
+            print(f"No cars found for {self.brand}")
             sys.exit()
 
-        # conver the list to a DataFrame
+        # convert the list to a DataFrame
         cars_df = pd.DataFrame(cars_list)
 
         # add the data to the data attribute
@@ -148,6 +198,41 @@ class CarData:
         self.steps.append("Change data types")
 
 
+    def add_car_object(self, car: Car):
+
+        self.cars_list.append(car)
+        
+
+    
+    def run_car_objects(self):
+        # get the car data
+        cars_df = self.data
+
+        # iterate over the cars
+        for idx, row in cars_df.iterrows():
+            new_car = Car(
+                license_plate=row['kenteken'],
+                brand=row['merk'],
+                model=row['handelsbenaming'],
+                first_date=row['datum_tenaamstelling'],
+                color=row['eerste_kleur'],
+                price=row['catalogusprijs'])
+            
+            # add the car object to the list
+            self.add_car_object(new_car)
+
+
+    def run_model_objects(self):
+
+        cars_list = self.cars_list
+
+        new_models = []
+
+        for car in cars_list:
+            new_model = Model(name=car.model)
+            self.brand_object.add_model(new_model)
+
+
     # method for grouping the data
     def group_car_data(self, *args):
         '''
@@ -181,6 +266,7 @@ class CarData:
                            .assign(totaal_dagen = lambda x: (x['laatst_geregistreerd'] -
                                                              x['eerst_geregistreerd']).dt.days
                                                             )
+                           .assign(gemiddelde_prijs = lambda x: x['gemiddelde_prijs'].round(2))
                            .assign(merk = lambda x: x['model'].str.split(" ").str[0])
                            .assign(model = lambda x: x['model'].str.split(" ").str[1:].str.join(" "))
                            .assign(jaar = lambda x: x['laatst_geregistreerd'].dt.strftime("%Y"))
@@ -198,6 +284,60 @@ class CarData:
         self.steps.append("Grouped data")
 
 
+    def export_data(self) -> None:
+        '''
+        Method for exporting the dataset
+        '''
+
+        # get the DataFrame
+        cars_df = self.data
+
+        # folder_path
+        folder_path = f"data/{self.brand}"
+
+        # check if the path exists
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        # file path
+        file_path = f"{folder_path}/{self.brand}.csv"
+
+        # export the dataset
+        cars_df.to_csv(file_path, sep=";", index=False)
+        
+        print(f"Succesfully exported to {file_path} ")
+
+        # add to steps
+        self.steps.append("✅ Exported")
+
+    
+    def generate_brand_model_hiearchy(self) -> None:
+
+        
+        plain_brand = self.brand_object.__dict__
+        plain_models = [model.__dict__ for model in self.brand_object.models]
+
+
+        brand_model_dict = {}
+        brand_model_dict['brand'] = plain_brand
+        brand_model_dict['models'] = plain_models
+
+        brand_model_str = json.dumps(brand_model_dict)
+
+        # folder_path
+        folder_path = f"data/{self.brand}"
+
+        # check if the path exists
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        # file path
+        file_path = f"{folder_path}/{self.brand}.json"
+
+        # export to json
+        with open(file_path, "w") as file:
+            file.write(brand_model_str)
+        
     def __repr__(self) -> str:
 
         return f"""
@@ -208,3 +348,11 @@ class CarData:
                 {self.data.head()}
                 
                 """
+
+
+class CarDataCollection:
+
+
+    def add_to_collection(self):
+        self.car_list
+        pass
