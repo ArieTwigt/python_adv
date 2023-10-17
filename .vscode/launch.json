@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: My Debugger",
+            "name": "Python: RDW App",
             "python": "${workspaceRoot}/venv/bin/python",
             "type": "python",
             "request": "launch",
