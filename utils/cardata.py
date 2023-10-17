@@ -4,6 +4,7 @@ from utils import COLUMNS_LIST, DF_DTYPES, DF_COLNAMES
 import datetime
 import os
 import json
+import sys
 
 class Car:
     
@@ -109,7 +110,7 @@ class CarData:
         # check the response status code
         if response.status_code != 200:
             print("Something went wrong")
-            sys.exit()
+            raise ValueError(f"No cars found for {self.brand}")
 
         # get the data from the response
         cars_list = response.json()
@@ -117,7 +118,7 @@ class CarData:
         # check if the list is not empty
         if len(cars_list) == 0:
             print(f"No cars found for {self.brand}")
-            sys.exit()
+            raise ValueError(f"No cars found for {self.brand}")
 
         # convert the list to a DataFrame
         cars_df = pd.DataFrame(cars_list)
