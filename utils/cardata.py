@@ -281,6 +281,9 @@ class CarData:
         # save it to the object
         self.data = cars_df_grouped
 
+        # you can convert a pandas DataFrame to a dictionary (JSON-like object)
+        # car_df_dict = cars_df_grouped.to_dict(orient="records")
+
         # append to the steps
         self.steps.append("Grouped data")
 

@@ -11,4 +11,5 @@ if __name__ == '__main__':
     my_car_data.run_model_objects()
     my_car_data.export_data()
     my_car_data.generate_brand_model_hiearchy()
+    my_car_data.group_car_data()
     pass
